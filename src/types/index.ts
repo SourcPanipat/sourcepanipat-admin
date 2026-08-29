@@ -66,6 +66,7 @@ export interface SubCategoryItem {
   categoryName?: string;
   name: string;
   slug: string;
+  defaultMoq?: number;
   isActive: boolean;
 }
 

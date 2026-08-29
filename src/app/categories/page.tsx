@@ -18,43 +18,56 @@ import {
   Building, 
   Sun, 
   Heart, 
-  Package,
-  X,
-  Upload,
-  Image as ImageIcon,
-  Save,
-  Check,
-  Flame,
-  Shield,
-  Tag,
-  RefreshCw,
-  Info
+  Package, 
+  X, 
+  Upload, 
+  Image as ImageIcon, 
+  Save, 
+  Check, 
+  Flame, 
+  Shield, 
+  Tag, 
+  RefreshCw, 
+  Info,
+  Link as LinkIcon,
+  Sparkle
 } from 'lucide-react';
 
+const TURSO_URL = process.env.NEXT_PUBLIC_TURSO_DATABASE_URL || 'libsql://sourcepanipat-sourcpanipat.aws-ap-south-1.turso.io';
+const TURSO_AUTH_TOKEN = process.env.NEXT_PUBLIC_TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODc5ODIyOTEsImlkIjoiMDFhMDRjMGMtNTkwMS03NjM5LTkzZWQtZWI2MTA3ZGU0YTY5Iiwia2lkIjoiZDIxY1lJdG9iMmFqSEU0R2ZRdEQyY1VQTXZzai1NcnhyZVBRVHI5WFpZUSIsInJpZCI6ImYzZDNiMzdmLTVlMmItNDlkYi1hMTc3LWQxYzJkN2NlZjNmYSJ9.Emfxh0Aqdcv77_R8j5CTPkKGweNSSt5sscmp08txsppH0dncNbyg87A8EZBgSBRMF8V2gaNoWlZiLMQazyU2DA';
+
+// Helper to execute Turso DB statements directly from the client (works both local and Cloudflare Workers)
+async function executeTursoQuery(requests: any[]) {
+  const httpUrl = TURSO_URL.replace('libsql://', 'https://') + '/v2/pipeline';
+  const res = await fetch(httpUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${TURSO_AUTH_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [...requests, { type: 'close' }],
+    }),
+  });
+  return res.json();
+}
+
+// Preset Curated Panipat B2B Lot Logo Gallery
+const PRESET_LOGOS = [
+  { name: 'Heavy Puffers & Jackets', url: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Fleece Hoodies & Sweats', url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Tactical Cargo & Joggers', url: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Vintage Denim & Workwear', url: 'https://images.unsplash.com/photo-1542272604-780c96856592?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Woolen Overcoats & Trench', url: 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Summer Tees & Tops', url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Y2K Thrift & Womenswear', url: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200&auto=format&fit=crop&q=80' },
+  { name: 'Mink Blankets & Furnishing', url: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=200&auto=format&fit=crop&q=80' },
+];
+
 export default function AdminCategoriesPage() {
-  const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([
-    { id: 'winter-jackets', name: 'Winter Jackets & Outerwear', slug: 'winter-jackets-outerwear', iconName: 'Layers', sortOrder: 1, isActive: true },
-    { id: 'fleece-sweatshirts', name: 'Fleece & Sweatshirts', slug: 'fleece-sweatshirts', iconName: 'Shirt', sortOrder: 2, isActive: true },
-    { id: 'pants-joggers', name: 'Pants, Joggers & Cargo', slug: 'pants-joggers-cargo', iconName: 'Scissors', sortOrder: 3, isActive: true },
-    { id: 'jeans-denim', name: 'Jeans & Denim Workwear', slug: 'jeans-denim-workwear', iconName: 'Sparkles', sortOrder: 4, isActive: true },
-    { id: 'overcoats-trench', name: 'Overcoats & Woolen Trench', slug: 'overcoats-trench', iconName: 'Building', sortOrder: 5, isActive: true },
-    { id: 'summer-tees', name: 'Summer Tees & Tops', slug: 'summer-tees-tops', iconName: 'Sun', sortOrder: 6, isActive: true },
-    { id: 'womens-thrift', name: 'Women Thrift & Y2K', slug: 'womens-thrift-y2k', iconName: 'Heart', sortOrder: 7, isActive: true },
-    { id: 'home-mink', name: 'Home Furnishings & Mink', slug: 'home-furnishings-mink', iconName: 'Package', sortOrder: 8, isActive: true },
-  ]);
-
-  const [subCategoriesList, setSubCategoriesList] = useState<SubCategoryItem[]>([
-    { id: 'heavy-puffers', categoryId: 'winter-jackets', name: 'Heavy Puffers', slug: 'heavy-puffers', isActive: true },
-    { id: 'flight-bombers', categoryId: 'winter-jackets', name: 'Leather Flight Bombers', slug: 'leather-flight-bombers', isActive: true },
-    { id: 'sherpa-truckers', categoryId: 'winter-jackets', name: 'Sherpa Trucker Jackets', slug: 'sherpa-trucker-jackets', isActive: true },
-    { id: 'heavy-hoodies', categoryId: 'fleece-sweatshirts', name: '450 GSM Heavy Hoodies', slug: '450-gsm-heavy-hoodies', isActive: true },
-    { id: 'graphic-crewnecks', categoryId: 'fleece-sweatshirts', name: 'Vintage Graphic Crewnecks', slug: 'vintage-graphic-crewnecks', isActive: true },
-    { id: 'tactical-cargo', categoryId: 'pants-joggers', name: 'Multi-Pocket Tactical Cargo', slug: 'multi-pocket-tactical-cargo', isActive: true },
-    { id: 'baggy-denim', categoryId: 'jeans-denim', name: '90s Baggy Denim Jeans', slug: '90s-baggy-denim-jeans', isActive: true },
-    { id: 'mink-blankets', categoryId: 'home-mink', name: 'Korean Double-Ply Mink Blankets', slug: 'korean-double-ply-mink-blankets', isActive: true },
-  ]);
-
-  const [selectedMasterCatId, setSelectedMasterCatId] = useState<string>('winter-jackets');
+  const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([]);
+  const [subCategoriesList, setSubCategoriesList] = useState<SubCategoryItem[]>([]);
+  const [selectedMasterCatId, setSelectedMasterCatId] = useState<string>('winter-jackets-outerwear');
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'error'>('synced');
 
@@ -67,6 +80,7 @@ export default function AdminCategoriesPage() {
   const [catLogoUrl, setCatLogoUrl] = useState('');
   const [catSortOrder, setCatSortOrder] = useState(1);
   const [catIsActive, setCatIsActive] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Sub Category Modal State
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -81,24 +95,42 @@ export default function AdminCategoriesPage() {
   const fetchCategoriesFromDB = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/categories');
-      const data = await res.json();
-      if (data.success && data.categories && data.categories.length > 0) {
-        setCategoriesList(data.categories);
-        
-        // Extract all sub categories
-        const allSubs: SubCategoryItem[] = [];
-        data.categories.forEach((cat: any) => {
-          if (cat.subCategories && cat.subCategories.length > 0) {
-            allSubs.push(...cat.subCategories);
-          }
-        });
-        if (allSubs.length > 0) {
-          setSubCategoriesList(allSubs);
+      const data = await executeTursoQuery([
+        { type: 'execute', stmt: { sql: 'SELECT id, name, slug, icon_name, logo_url, sort_order, is_active FROM categories ORDER BY sort_order ASC' } },
+        { type: 'execute', stmt: { sql: 'SELECT id, category_id, name, slug, default_moq, is_active FROM sub_categories' } },
+      ]);
+
+      const catRows = data.results?.[0]?.response?.result?.rows || [];
+      const subRows = data.results?.[1]?.response?.result?.rows || [];
+
+      if (catRows.length > 0) {
+        const parsedCats: CategoryItem[] = catRows.map((r: any[]) => ({
+          id: String(r[0]?.value || ''),
+          name: String(r[1]?.value || ''),
+          slug: String(r[2]?.value || ''),
+          iconName: String(r[3]?.value || 'Layers'),
+          logoUrl: r[4]?.value ? String(r[4]?.value) : undefined,
+          sortOrder: Number(r[5]?.value || 1),
+          isActive: Boolean(r[6]?.value),
+        }));
+
+        const parsedSubs: SubCategoryItem[] = subRows.map((sr: any[]) => ({
+          id: String(sr[0]?.value || ''),
+          categoryId: String(sr[1]?.value || ''),
+          name: String(sr[2]?.value || ''),
+          slug: String(sr[3]?.value || ''),
+          defaultMoq: Number(sr[4]?.value || 25),
+          isActive: Boolean(sr[5]?.value),
+        }));
+
+        setCategoriesList(parsedCats);
+        setSubCategoriesList(parsedSubs);
+        if (parsedCats.length > 0 && !selectedMasterCatId) {
+          setSelectedMasterCatId(parsedCats[0].id);
         }
       }
     } catch (err) {
-      console.error('Error fetching categories from DB:', err);
+      console.error('Error fetching categories from Turso DB:', err);
     } finally {
       setIsLoading(false);
     }
@@ -129,16 +161,13 @@ export default function AdminCategoriesPage() {
     const itemA = updated[currentIndex];
     const itemB = updated[targetIndex];
 
-    // Swap sortOrder values
     const tempOrder = itemA.sortOrder;
     itemA.sortOrder = itemB.sortOrder;
     itemB.sortOrder = tempOrder;
 
-    // Swap positions in array
     updated[currentIndex] = itemB;
     updated[targetIndex] = itemA;
 
-    // Normalize sortOrders 1..N
     const reindexed = updated.map((item, idx) => ({
       ...item,
       sortOrder: idx + 1,
@@ -147,15 +176,15 @@ export default function AdminCategoriesPage() {
     setCategoriesList(reindexed);
     setSyncStatus('saving');
 
-    // Sync to Turso DB
     try {
-      await fetch('/api/categories/reorder', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: reindexed.map(c => ({ id: c.id, sortOrder: c.sortOrder })),
-        }),
-      });
+      const updateRequests = reindexed.map((c) => ({
+        type: 'execute',
+        stmt: {
+          sql: 'UPDATE categories SET sort_order = ? WHERE id = ?',
+          args: [{ type: 'integer', value: String(c.sortOrder) }, { type: 'text', value: c.id }],
+        },
+      }));
+      await executeTursoQuery(updateRequests);
       setSyncStatus('synced');
     } catch (e) {
       console.error(e);
@@ -167,10 +196,10 @@ export default function AdminCategoriesPage() {
   const handleDirectRankChange = async (catId: string, newRank: number) => {
     if (isNaN(newRank) || newRank < 1) return;
 
-    const targetCat = categoriesList.find(c => c.id === catId);
+    const targetCat = categoriesList.find((c) => c.id === catId);
     if (!targetCat) return;
 
-    const otherCats = categoriesList.filter(c => c.id !== catId);
+    const otherCats = categoriesList.filter((c) => c.id !== catId);
     const insertIndex = Math.min(Math.max(newRank - 1, 0), otherCats.length);
 
     otherCats.splice(insertIndex, 0, targetCat);
@@ -184,13 +213,14 @@ export default function AdminCategoriesPage() {
     setSyncStatus('saving');
 
     try {
-      await fetch('/api/categories/reorder', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: reindexed.map(c => ({ id: c.id, sortOrder: c.sortOrder })),
-        }),
-      });
+      const updateRequests = reindexed.map((c) => ({
+        type: 'execute',
+        stmt: {
+          sql: 'UPDATE categories SET sort_order = ? WHERE id = ?',
+          args: [{ type: 'integer', value: String(c.sortOrder) }, { type: 'text', value: c.id }],
+        },
+      }));
+      await executeTursoQuery(updateRequests);
       setSyncStatus('synced');
     } catch (e) {
       console.error(e);
@@ -222,119 +252,101 @@ export default function AdminCategoriesPage() {
     setIsCatModalOpen(true);
   };
 
-  // Handle Logo File Upload (Cloudflare R2 + Local fallback)
-  const [isUploading, setIsUploading] = useState(false);
-
+  // Handle Logo File Upload with Browser-Canvas Compression (converts heavy camera photos to crisp ~8KB WebP)
   const handleLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', 'categories');
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.url) {
-        setCatLogoUrl(data.url);
-      } else {
-        // Fallback local reader
+      // Compress and resize image in client canvas to 160x160 px
+      const compressedDataUrl = await new Promise<string>((resolve) => {
+        const img = new (window as any).Image();
         const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) setCatLogoUrl(event.target.result as string);
+        reader.onload = (ev) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 160;
+            let w = img.width;
+            let h = img.height;
+            if (w > h) {
+              if (w > MAX_SIZE) {
+                h = Math.round(h * (MAX_SIZE / w));
+                w = MAX_SIZE;
+              }
+            } else {
+              if (h > MAX_SIZE) {
+                w = Math.round(w * (MAX_SIZE / h));
+                h = MAX_SIZE;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, w, h);
+            const dataUrl = canvas.toDataURL('image/webp', 0.85);
+            resolve(dataUrl);
+          };
+          img.src = ev.target?.result as string;
         };
         reader.readAsDataURL(file);
-      }
+      });
+
+      setCatLogoUrl(compressedDataUrl);
     } catch (err) {
-      console.warn('R2 upload notice, using local preview:', err);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) setCatLogoUrl(event.target.result as string);
-      };
-      reader.readAsDataURL(file);
+      console.error('Image compression notice:', err);
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Save Category (Create or Edit)
+  // Save Category (Create or Edit) directly to Turso DB
   const handleSaveCat = async (e: React.FormEvent) => {
     e.preventDefault();
     setSyncStatus('saving');
 
     const slug = catSlug.trim() || catName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const catId = editingCat ? editingCat.id : slug;
+
+    const newCatItem: CategoryItem = {
+      id: catId,
+      name: catName,
+      slug,
+      iconName: catIcon,
+      logoUrl: catLogoUrl || undefined,
+      sortOrder: catSortOrder,
+      isActive: catIsActive,
+    };
 
     if (editingCat) {
-      // Update
-      const updatedList = categoriesList.map(c => {
-        if (c.id === editingCat.id) {
-          return {
-            ...c,
-            name: catName,
-            slug,
-            iconName: catIcon,
-            logoUrl: catLogoUrl || undefined,
-            sortOrder: catSortOrder,
-            isActive: catIsActive,
-          };
-        }
-        return c;
-      });
-
-      setCategoriesList(updatedList);
-
-      try {
-        await fetch('/api/categories', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: editingCat.id,
-            name: catName,
-            slug,
-            iconName: catIcon,
-            logoUrl: catLogoUrl || null,
-            sortOrder: catSortOrder,
-            isActive: catIsActive,
-          }),
-        });
-        setSyncStatus('synced');
-      } catch (err) {
-        console.error(err);
-        setSyncStatus('error');
-      }
-
+      setCategoriesList(prev => prev.map(c => (c.id === editingCat.id ? newCatItem : c)));
     } else {
-      // Create New
-      const id = slug;
-      const newCat: CategoryItem = {
-        id,
-        name: catName,
-        slug,
-        iconName: catIcon,
-        logoUrl: catLogoUrl || undefined,
-        sortOrder: catSortOrder,
-        isActive: catIsActive,
-        subCategoriesCount: 0,
-      };
+      setCategoriesList(prev => [...prev, newCatItem]);
+    }
 
-      setCategoriesList([...categoriesList, newCat]);
-
-      try {
-        await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newCat),
-        });
-        setSyncStatus('synced');
-      } catch (err) {
-        console.error(err);
-        setSyncStatus('error');
-      }
+    try {
+      await executeTursoQuery([
+        {
+          type: 'execute',
+          stmt: {
+            sql: `INSERT OR REPLACE INTO categories (id, name, slug, icon_name, logo_url, sort_order, is_active)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              { type: 'text', value: catId },
+              { type: 'text', value: catName },
+              { type: 'text', value: slug },
+              { type: 'text', value: catIcon },
+              { type: catLogoUrl ? 'text' : 'null', value: catLogoUrl || null },
+              { type: 'integer', value: String(catSortOrder) },
+              { type: 'integer', value: catIsActive ? '1' : '0' },
+            ],
+          },
+        },
+      ]);
+      setSyncStatus('synced');
+    } catch (err) {
+      console.error('Error saving category to Turso DB:', err);
+      setSyncStatus('error');
     }
 
     setIsCatModalOpen(false);
@@ -348,7 +360,10 @@ export default function AdminCategoriesPage() {
     setSubCategoriesList(prev => prev.filter(s => s.categoryId !== id));
 
     try {
-      await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
+      await executeTursoQuery([
+        { type: 'execute', stmt: { sql: 'DELETE FROM categories WHERE id = ?', args: [{ type: 'text', value: id }] } },
+        { type: 'execute', stmt: { sql: 'DELETE FROM sub_categories WHERE category_id = ?', args: [{ type: 'text', value: id }] } },
+      ]);
     } catch (e) {
       console.error(e);
     }
@@ -363,11 +378,15 @@ export default function AdminCategoriesPage() {
     }));
 
     try {
-      await fetch('/api/categories', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: cat.id, isActive: nextState }),
-      });
+      await executeTursoQuery([
+        {
+          type: 'execute',
+          stmt: {
+            sql: 'UPDATE categories SET is_active = ? WHERE id = ?',
+            args: [{ type: 'integer', value: nextState ? '1' : '0' }, { type: 'text', value: cat.id }],
+          },
+        },
+      ]);
     } catch (e) {
       console.error(e);
     }
@@ -382,6 +401,7 @@ export default function AdminCategoriesPage() {
       categoryId: selectedMasterCatId,
       name: subName,
       slug,
+      defaultMoq: 25,
       isActive: true,
     };
 
@@ -391,11 +411,23 @@ export default function AdminCategoriesPage() {
     setSubSlug('');
 
     try {
-      await fetch('/api/categories/sub', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSub),
-      });
+      await executeTursoQuery([
+        {
+          type: 'execute',
+          stmt: {
+            sql: `INSERT OR REPLACE INTO sub_categories (id, category_id, name, slug, default_moq, is_active)
+                  VALUES (?, ?, ?, ?, ?, ?)`,
+            args: [
+              { type: 'text', value: newSub.id },
+              { type: 'text', value: newSub.categoryId },
+              { type: 'text', value: newSub.name },
+              { type: 'text', value: newSub.slug },
+              { type: 'integer', value: '25' },
+              { type: 'integer', value: '1' },
+            ],
+          },
+        },
+      ]);
     } catch (e) {
       console.error(e);
     }
@@ -405,14 +437,22 @@ export default function AdminCategoriesPage() {
   const handleDeleteSubCategory = async (subId: string) => {
     setSubCategoriesList(prev => prev.filter(s => s.id !== subId));
     try {
-      await fetch(`/api/categories/sub?id=${subId}`, { method: 'DELETE' });
+      await executeTursoQuery([
+        {
+          type: 'execute',
+          stmt: {
+            sql: 'DELETE FROM sub_categories WHERE id = ?',
+            args: [{ type: 'text', value: subId }],
+          },
+        },
+      ]);
     } catch (e) {
       console.error(e);
     }
   };
 
   const activeMasterCat = categoriesList.find(c => c.id === selectedMasterCatId) || categoriesList[0];
-  const currentSubList = subCategoriesList.filter(s => s.categoryId === selectedMasterCatId);
+  const currentSubList = subCategoriesList.filter(s => s.categoryId === (activeMasterCat?.id || selectedMasterCatId));
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -430,21 +470,22 @@ export default function AdminCategoriesPage() {
               'bg-rose-50 text-rose-800'
             }`}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{syncStatus === 'saving' ? 'Syncing to Turso DB...' : 'Turso LibSQL Connected'}</span>
+              <span>{syncStatus === 'saving' ? 'Syncing to Turso DB...' : 'Turso LibSQL Live Synced'}</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Upload custom category logos, re-rank order weights (#1 $\rightarrow$ #3), and manage dynamic sub-lot classification
+            Upload custom category logos, re-rank order weights (#1 → #3), and manage dynamic sub-lot classification
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={fetchCategoriesFromDB}
-            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition-colors"
+            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition-colors flex items-center gap-1"
             title="Refresh from Database"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="font-semibold text-xs hidden sm:inline">Refresh DB</span>
           </button>
 
           <button
@@ -530,14 +571,11 @@ export default function AdminCategoriesPage() {
                       isSelected ? 'bg-slate-900 text-amber-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'
                     }`}>
                       {cat.logoUrl ? (
-                        <div className="relative w-full h-full">
-                          <Image
-                            src={cat.logoUrl}
-                            alt={cat.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
+                        <img
+                          src={cat.logoUrl}
+                          alt={cat.name}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         getIconComponent(cat.iconName)
                       )}
@@ -611,7 +649,7 @@ export default function AdminCategoriesPage() {
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <span>Sub-Categories for: </span>
                 <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold">
-                  {activeMasterCat?.name}
+                  {activeMasterCat?.name || 'Selected Category'}
                 </span>
               </h2>
             </div>
@@ -681,7 +719,7 @@ export default function AdminCategoriesPage() {
 
       </div>
 
-      {/* MASTER CATEGORY CREATE & EDIT MODAL (WITH LOGO UPLOAD) */}
+      {/* MASTER CATEGORY CREATE & EDIT MODAL (WITH DIRECT URL & COMPRESSED LOGO UPLOAD) */}
       {isCatModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl text-xs overflow-y-auto max-h-[90vh]">
@@ -709,7 +747,7 @@ export default function AdminCategoriesPage() {
                   placeholder="e.g. Winter Jackets & Outerwear"
                   value={catName}
                   onChange={(e) => setCatName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-slate-800 focus:outline-none text-slate-900"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-slate-800 focus:outline-none text-slate-900 font-semibold"
                 />
               </div>
 
@@ -727,7 +765,7 @@ export default function AdminCategoriesPage() {
               </div>
 
               {/* Category Logo & Visual Icon Upload Area */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="font-bold text-slate-800 text-xs flex items-center justify-between">
                   <span>Category Visual Logo / Icon</span>
                   <span className="text-[10px] text-slate-500 font-normal">Shown on buyer homepage</span>
@@ -738,11 +776,10 @@ export default function AdminCategoriesPage() {
                   {/* Logo Preview */}
                   <div className="w-14 h-14 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center shrink-0 overflow-hidden relative shadow-xs">
                     {catLogoUrl ? (
-                      <Image
+                      <img
                         src={catLogoUrl}
                         alt="Preview"
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="text-slate-400 flex flex-col items-center">
@@ -752,11 +789,11 @@ export default function AdminCategoriesPage() {
                     )}
                   </div>
 
-                  {/* Upload Controls */}
+                  {/* Upload & Direct URL Controls */}
                   <div className="flex-1 space-y-1.5">
                     <label className={`cursor-pointer px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-800 font-semibold border border-slate-300 text-xs inline-flex items-center gap-1.5 shadow-xs transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
                       <Upload className={`w-3.5 h-3.5 text-slate-600 ${isUploading ? 'animate-bounce' : ''}`} />
-                      <span>{isUploading ? 'Uploading to Cloudflare R2...' : 'Upload Logo Photo / Icon'}</span>
+                      <span>{isUploading ? 'Compressing Icon...' : 'Upload & Compress Photo'}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -766,20 +803,50 @@ export default function AdminCategoriesPage() {
                       />
                     </label>
 
-                    <div className="text-[10.5px] text-slate-500">
-                      Or paste direct image URL below:
+                    <div className="text-[10px] text-slate-500">
+                      Auto-resized to crisp ~8KB WebP icon for lightning speed
                     </div>
                   </div>
 
                 </div>
 
-                <input
-                  type="url"
-                  placeholder="https://pub-sourcepanipat.r2.dev/icons/jackets.png"
-                  value={catLogoUrl}
-                  onChange={(e) => setCatLogoUrl(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white text-slate-900 focus:border-slate-800 focus:outline-none"
-                />
+                {/* Direct Image URL input */}
+                <div>
+                  <div className="flex items-center gap-1 mb-1 text-[11px] font-semibold text-slate-600">
+                    <LinkIcon className="w-3 h-3 text-slate-400" />
+                    <span>Direct Image URL (CDN / Public Image Link):</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="https://images.unsplash.com/... or https://pub-sourcepanipat.r2.dev/..."
+                    value={catLogoUrl}
+                    onChange={(e) => setCatLogoUrl(e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white text-slate-900 focus:border-slate-800 focus:outline-none font-mono"
+                  />
+                </div>
+
+                {/* 1-Click Panipat Curated Preset Gallery */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-[10.5px] font-bold text-slate-700 flex items-center gap-1">
+                    <Sparkle className="w-3 h-3 text-amber-500" />
+                    <span>Quick Select Curated Industry Icon:</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {PRESET_LOGOS.map((preset) => (
+                      <button
+                        type="button"
+                        key={preset.name}
+                        onClick={() => setCatLogoUrl(preset.url)}
+                        className={`p-1 rounded-lg border text-left flex items-center gap-1.5 transition-colors ${
+                          catLogoUrl === preset.url ? 'bg-amber-100 border-amber-400 text-slate-900 font-bold' : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-600'
+                        }`}
+                      >
+                        <img src={preset.url} alt="" className="w-5 h-5 rounded object-cover shrink-0" />
+                        <span className="text-[9.5px] truncate">{preset.name.split(' ')[0]}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {catLogoUrl && (
                   <button
@@ -787,7 +854,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => setCatLogoUrl('')}
                     className="text-[10px] text-rose-600 hover:underline font-semibold"
                   >
-                    Remove custom logo (use Lucide fallback)
+                    Remove custom logo (revert to Lucide vector icon)
                   </button>
                 )}
               </div>
@@ -825,7 +892,7 @@ export default function AdminCategoriesPage() {
                     min={1}
                     value={catSortOrder}
                     onChange={(e) => setCatSortOrder(parseInt(e.target.value) || 1)}
-                    className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-slate-800 focus:outline-none font-mono text-slate-900"
+                    className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-slate-800 focus:outline-none font-mono text-slate-900 font-bold"
                   />
                 </div>
               </div>
@@ -854,9 +921,9 @@ export default function AdminCategoriesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1"
+                    className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1 shadow-xs"
                   >
-                    <Save className="w-3.5 h-3.5" />
+                    <Save className="w-3.5 h-3.5 text-amber-400" />
                     <span>Save to Turso DB</span>
                   </button>
                 </div>
@@ -891,7 +958,7 @@ export default function AdminCategoriesPage() {
                   placeholder="e.g. Quilted Down Vests (Grade A)"
                   value={subName}
                   onChange={(e) => setSubName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-slate-800 focus:outline-none text-slate-900"
+                  className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:border-slate-800 focus:outline-none text-slate-900 font-semibold"
                 />
               </div>
 
