@@ -21,43 +21,9 @@ import {
 } from 'lucide-react';
 
 export default function AdminDisputesPage() {
-  const [disputes, setDisputes] = useState<DisputeRecord[]>([
-    {
-      id: 'disp-101',
-      orderNumber: 'SP-ESCROW-782190',
-      raisedBy: 'BUYER',
-      partyName: 'Rahul Sharma (Urban Vintage Thrift)',
-      partyPhone: '+91 98112 34567',
-      reason: 'Tare Weight Discrepancy',
-      disputeAmount: 33000,
-      description: 'Buyer weighed bale on receiving at Delhi shop: tare scale showed 78.4 kg vs Panipat godown tare certificate of 81.4 kg (3.0 kg variance). Requesting ₹1,200 weight adjustment settlement.',
-      godownVideoUrl: 'https://pub-sourcepanipat.r2.dev/godown-walkthrough.mp4',
-      inspectorTarePhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      buyerEvidenceUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
-      sellerMaskedId: '#PNP-001 (Gupta Syndicate)',
-      inspectorCode: '#PNP-INSP-01 (Vikram S.)',
-      status: 'OPEN_INVESTIGATION',
-      createdAt: '29 Aug 2026, 11:20 AM',
-    },
-    {
-      id: 'disp-102',
-      orderNumber: 'SP-ESCROW-410923',
-      raisedBy: 'SELLER',
-      partyName: 'Haryana Overseas (#PNP-002)',
-      partyPhone: '+91 98234 56789',
-      reason: 'Delayed Dispatch',
-      disputeAmount: 48000,
-      description: 'V-Trans Panipat hub delayed LR issue due to rain. Buyer requested immediate escrow refund before transporter loaded.',
-      godownVideoUrl: 'https://pub-sourcepanipat.r2.dev/godown-walkthrough.mp4',
-      inspectorTarePhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      sellerMaskedId: '#PNP-002',
-      inspectorCode: '#PNP-INSP-02',
-      status: 'SETTLED_RELEASED_SELLER',
-      createdAt: '27 Aug 2026, 04:00 PM',
-    },
-  ]);
-
+  const [disputes, setDisputes] = useState<DisputeRecord[]>([]);
   const [selectedDispute, setSelectedDispute] = useState<DisputeRecord | null>(null);
+
   const [partialAmount, setPartialAmount] = useState('1200');
   const [resolutionNote, setResolutionNote] = useState('');
 

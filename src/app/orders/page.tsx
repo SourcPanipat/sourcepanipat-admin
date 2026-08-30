@@ -28,75 +28,48 @@ function AdminOrdersContent() {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrderRecord | null>(null);
 
-  const [ordersList, setOrdersList] = useState<AdminOrderRecord[]>([
-    {
-      id: 'ord-1',
-      orderNumber: 'SP-ESCROW-782190',
-      buyerName: 'Rahul Sharma',
-      buyerPhone: '+91 98112 34567',
-      buyerBusinessName: 'Urban Vintage Thrift Studio',
-      buyerCity: 'New Delhi (Hauz Khas)',
-      sellerMaskedCode: '#PNP-001',
-      sellerBusinessName: 'Gupta Wholesale Textile Syndicate',
-      godownZone: 'Sanoli Road Godown Hub',
-      baleTitle: 'Korean Heavy Puffer Jackets (Grade A Cream Lot)',
-      weightKg: 80,
-      quantity: 1,
-      buyMode: 'sealed_bale',
-      totalAmount: 33000,
-      escrowStatus: 'QC_APPROVAL_PENDING',
-      currentStageIndex: 2,
-      inspectorCode: '#PNP-INSP-01',
-      inspectorName: 'Vikram S.',
-      verifiedTareWeightKg: 81.4,
-      createdAt: '28 Aug 2026, 07:50 PM',
-    },
-    {
-      id: 'ord-2',
-      orderNumber: 'SP-ESCROW-640192',
-      buyerName: 'Priya Joshi',
-      buyerPhone: '+91 98223 99881',
-      buyerBusinessName: 'Retro Kulture Mumbai',
-      buyerCity: 'Mumbai (Bandra West)',
-      sellerMaskedCode: '#PNP-002',
-      sellerBusinessName: 'Haryana Overseas Mill Yard',
-      godownZone: 'Noorwala Industrial Area',
-      baleTitle: 'Vintage 90s Baggy Denim Workwear (100kg)',
-      weightKg: 100,
-      quantity: 1,
-      buyMode: 'sealed_bale',
-      totalAmount: 89000,
-      escrowStatus: 'DISPATCHED_BILTI_UPLOADED',
-      currentStageIndex: 3,
-      inspectorCode: '#PNP-INSP-02',
-      inspectorName: 'Deepak M.',
-      verifiedTareWeightKg: 101.8,
-      biltiLrNumber: 'VTRANS-PNP-981240',
-      transporterName: 'V-Trans Panipat Hub',
-      createdAt: '27 Aug 2026, 02:15 PM',
-    },
-    {
-      id: 'ord-3',
-      orderNumber: 'SP-ESCROW-551980',
-      buyerName: 'Tashi Namgyal',
-      buyerPhone: '+91 98765 11223',
-      buyerBusinessName: 'Himalayan Thrift Boutique',
-      buyerCity: 'Guwahati (Assam)',
-      sellerMaskedCode: '#PNP-004',
-      sellerBusinessName: 'Shree Ganesh Exports',
-      godownZone: 'Barsat Road Sorting Yard',
-      baleTitle: 'Korean Double-Ply Mink Blankets (100kg)',
-      weightKg: 100,
-      quantity: 1,
-      buyMode: 'sealed_bale',
-      totalAmount: 28000,
-      escrowStatus: 'INSPECTOR_ASSIGNED',
-      currentStageIndex: 1,
-      inspectorCode: '#PNP-INSP-03',
-      inspectorName: 'Amit D.',
-      createdAt: '29 Aug 2026, 09:30 AM',
-    },
-  ]);
+  const [ordersList, setOrdersList] = useState<AdminOrderRecord[]>([]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedOrders = localStorage.getItem('sp_escrow_orders');
+    const recentOrder = localStorage.getItem('sp_recent_order');
+    let all: AdminOrderRecord[] = [];
+    if (storedOrders) {
+      try { all = JSON.parse(storedOrders); } catch (e) {}
+    }
+    if (recentOrder) {
+      try {
+        const parsed = JSON.parse(recentOrder);
+        if (!all.some(o => o.orderNumber === parsed.orderNumber || o.id === parsed.id)) {
+          all.unshift({
+            id: parsed.id || 'ord-new',
+            orderNumber: parsed.orderNumber || parsed.id,
+            buyerName: parsed.buyerName || 'Verified Buyer',
+            buyerPhone: parsed.buyerPhone || '+91 89502 02286',
+            buyerBusinessName: parsed.buyerBusinessName || 'Buyer Enterprise',
+            buyerCity: `${parsed.deliveryCity || 'Delhi'} (${parsed.deliveryState || 'NCR'})`,
+            sellerMaskedCode: parsed.sellerMaskedCode || '#PNP-001',
+            sellerBusinessName: 'Panipat Godown Syndicate',
+            godownZone: parsed.godownZone || 'Sanoli Road Godown Hub',
+            baleTitle: parsed.baleTitle || 'Wholesale Lot',
+            weightKg: parsed.baleWeightKg || 80,
+            quantity: parsed.quantityBales || 1,
+            buyMode: parsed.buyMode || 'sealed_bale',
+            totalAmount: parsed.totalPayable || 30000,
+            escrowStatus: parsed.escrowStatus || 'ESCROW_LOCKED',
+            currentStageIndex: parsed.currentStageIndex || 0,
+            inspectorCode: parsed.inspector?.code || '#PNP-INSP-01',
+            inspectorName: parsed.inspector?.name || 'Vikram S.',
+            verifiedTareWeightKg: parsed.inspector?.verifiedTareWeightKg || 80,
+            createdAt: 'Today',
+          });
+        }
+      } catch (e) {}
+    }
+    setOrdersList(all);
+  }, []);
+
 
   const stageOptions: { stage: EscrowStatus; label: string; index: number }[] = [
     { stage: 'ESCROW_LOCKED', label: '1. Order Placed (Escrow Locked)', index: 0 },

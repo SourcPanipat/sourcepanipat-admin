@@ -19,6 +19,29 @@ import {
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [pendingLots, setPendingLots] = React.useState(0);
+  const [pendingSellers, setPendingSellers] = React.useState(0);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Check pending sellers
+    const storedSellers = localStorage.getItem('sp_registered_sellers');
+    const activeSeller = localStorage.getItem('sp_active_seller');
+    let allS = [];
+    if (storedSellers) try { allS = JSON.parse(storedSellers); } catch (e) {}
+    if (activeSeller) try {
+      const p = JSON.parse(activeSeller);
+      if (!allS.some((s: any) => s.id === p.id)) allS.push(p);
+    } catch (e) {}
+    setPendingSellers(allS.filter((s: any) => s.verificationStatus === 'pending_approval').length);
+
+    // Check pending lots
+    const storedLots = localStorage.getItem('sp_seller_lots');
+    let allL = [];
+    if (storedLots) try { allL = JSON.parse(storedLots); } catch (e) {}
+    setPendingLots(allL.filter((l: any) => l.status === 'pending_approval').length);
+  }, [pathname]);
 
   const navItems = [
     {
@@ -31,14 +54,14 @@ export function AdminSidebar() {
       name: 'Listing Approvals',
       href: '/listings',
       icon: FileCheck,
-      badge: '3 Pending',
+      badge: pendingLots > 0 ? `${pendingLots} Pending` : null,
       badgeColor: 'bg-amber-500 text-slate-950',
     },
     {
       name: 'Sellers & Godown KYC',
       href: '/sellers',
       icon: Building2,
-      badge: '2 Pending',
+      badge: pendingSellers > 0 ? `${pendingSellers} Pending` : null,
       badgeColor: 'bg-amber-500 text-slate-950',
     },
     {
@@ -62,6 +85,7 @@ export function AdminSidebar() {
       badge: null,
     },
   ];
+
 
 
   return (
