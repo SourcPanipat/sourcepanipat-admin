@@ -48,13 +48,13 @@ export default function AdminDashboardPage() {
       link: '/inspectors',
     },
     {
-      title: 'Open Dispute Claims',
-      value: '1 Active Claim',
-      subtitle: 'Tare Weight Discrepancy',
-      icon: AlertTriangle,
+      title: 'Pending Lot Approvals',
+      value: '3 Lots Staged',
+      subtitle: 'New & Edited Bales',
+      icon: FileCheck,
       color: 'text-amber-700',
       bg: 'bg-amber-50',
-      link: '/disputes',
+      link: '/listings',
     },
   ];
 
@@ -70,13 +70,14 @@ export default function AdminDashboardPage() {
     },
     {
       id: 'act-2',
-      title: 'Tare Scale Discrepancy: Order SP-ESCROW-782190',
-      type: 'Dispute Hold',
-      desc: 'Buyer reported 78.2kg received vs 81.4kg billed. Inspector photo attached.',
-      href: '/disputes',
-      cta: 'Review Evidence',
+      title: 'Staged Bale Approval: Korean Heavy Puffers (#PNP-001)',
+      type: 'Listing Staging',
+      desc: 'New lot staged with 2 x 30s opening videos & Grade A breakdown. Needs audit.',
+      href: '/listings',
+      cta: 'Review & Publish',
       priority: 'URGENT',
     },
+
     {
       id: 'act-3',
       title: 'Assign Inspector: Order SP-ESCROW-551980',

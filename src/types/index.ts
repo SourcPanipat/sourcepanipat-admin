@@ -1,5 +1,9 @@
 export type VerificationStatus = 'pending_approval' | 'approved' | 'rejected';
 
+export type ListingStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected';
+
+export type SourcingMode = 'bale_only' | 'pieces_only' | 'both';
+
 export type EscrowStatus = 
   | 'ESCROW_LOCKED' 
   | 'INSPECTOR_ASSIGNED' 
@@ -7,6 +11,65 @@ export type EscrowStatus =
   | 'DISPATCHED_BILTI_UPLOADED' 
   | 'DELIVERED_SETTLED'
   | 'DISPUTE_HOLD';
+
+export interface VideoGradeClip {
+  id: string;
+  type: 'opening_inspection' | 'grade_sample' | 'tare_scale';
+  grade: 'Grade A' | 'Grade A/B' | 'Mixed';
+  videoUrl: string;
+  durationSeconds: number; // Max 30s
+  label: string;
+  description: string;
+}
+
+export interface GradeDistribution {
+  gradeA: number; // e.g. 85
+  gradeB: number; // e.g. 12
+  gradeC: number; // e.g. 3
+}
+
+export interface AdminBaleListingItem {
+  id: string;
+  slug: string;
+  sellerId: string;
+  sellerMaskedCode?: string;
+  sellerFullName?: string;
+  sellerBusinessName?: string;
+  categoryId: string;
+  subCategoryId: string;
+  categoryLabel: string;
+  title: string;
+  shortDescription: string;
+  sourcingMode: SourcingMode;
+  originCountry: string;
+  originFlag: string;
+  thumbnailUrl: string;
+  galleryImages: string[];
+  weightKg: number;
+  estimatedPieceCount: number;
+  sealedBalePrice: number;
+  curatedPiecePrice: number;
+  curatedMoq: number;
+  gradeA: number;
+  gradeB: number;
+  gradeC: number;
+  videos: VideoGradeClip[];
+  photos: string[];
+  godownBatchId: string;
+  qcVerified: boolean;
+  inStockCount: number;
+  garmentType?: string;
+  targetGender?: string;
+  primaryFabric?: string;
+  fabricComposition: string;
+  expectedGrossMargin: string;
+  status: ListingStatus; // 'draft' | 'pending_approval' | 'approved' | 'rejected'
+  pendingEditJson?: string;
+  rejectionReason?: string;
+  isEdited?: boolean;
+  statusUpdatedAt?: string;
+  createdAt: string;
+}
 
 export interface SellerApplicant {
   id: string;

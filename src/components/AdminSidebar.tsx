@@ -9,12 +9,12 @@ import {
   Building2, 
   UserCheck, 
   Layers, 
-  AlertTriangle, 
   Truck, 
   ShieldCheck, 
   ExternalLink,
   Lock,
-  Scale
+  Scale,
+  FileCheck
 } from 'lucide-react';
 
 export function AdminSidebar() {
@@ -26,6 +26,13 @@ export function AdminSidebar() {
       href: '/',
       icon: LayoutDashboard,
       badge: null,
+    },
+    {
+      name: 'Listing Approvals',
+      href: '/listings',
+      icon: FileCheck,
+      badge: '3 Pending',
+      badgeColor: 'bg-amber-500 text-slate-950',
     },
     {
       name: 'Sellers & Godown KYC',
@@ -49,19 +56,13 @@ export function AdminSidebar() {
       badgeColor: 'bg-slate-800 text-slate-400',
     },
     {
-      name: 'Disputes & Escrow Holds',
-      href: '/disputes',
-      icon: AlertTriangle,
-      badge: '1 Open',
-      badgeColor: 'bg-rose-500 text-white',
-    },
-    {
       name: 'Master Orders & Tracking',
       href: '/orders',
       icon: Truck,
       badge: null,
     },
   ];
+
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 min-h-screen text-slate-300">
