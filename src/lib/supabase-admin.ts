@@ -86,12 +86,13 @@ export function mapDbListingToAdminItem(row: any, sellerRow?: any): AdminBaleLis
 // ADMIN ACTIONS: SELLERS
 // -------------------------------------------------------------
 
-export async function getAllSellersFromDb(): Promise<SellerApplicant[]> {
+export async function getAllSellersFromDb(limit = 100): Promise<SellerApplicant[]> {
   try {
     const { data, error } = await supabaseAdmin
       .from('sellers')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching all sellers in admin:', error);
@@ -154,12 +155,13 @@ export async function updateSellerAccountStatusInDb(sellerId: string, accountSta
 // ADMIN ACTIONS: LISTINGS
 // -------------------------------------------------------------
 
-export async function getAllListingsForAdminFromDb(): Promise<AdminBaleListingItem[]> {
+export async function getAllListingsForAdminFromDb(limit = 100): Promise<AdminBaleListingItem[]> {
   try {
     const { data, error } = await supabaseAdmin
       .from('listings')
       .select('*, sellers(*)')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching admin listings:', error);
@@ -172,6 +174,7 @@ export async function getAllListingsForAdminFromDb(): Promise<AdminBaleListingIt
     return [];
   }
 }
+
 
 export async function approveListingInDb(listingId: string): Promise<AdminBaleListingItem | null> {
   // If there was a pending edit, apply it
