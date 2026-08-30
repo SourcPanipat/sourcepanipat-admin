@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+
 import Image from 'next/image';
 import { SellerApplicant, VerificationStatus } from '@/types';
 import { 
@@ -27,125 +29,65 @@ export default function AdminSellersPage() {
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
-  // Initial Mock Applicants
-  const [sellersList, setSellersList] = useState<SellerApplicant[]>([
-    {
-      id: 'pnp-app-001',
-      maskedCode: '#PNP-001',
-      fullName: 'Sunil Gupta',
-      phone: '+91 98123 45678',
-      email: 'gupta.textiles.panipat@gmail.com',
-      businessName: 'Gupta Wholesale Textile Syndicate',
-      godownZone: 'Sanoli Road Godown Hub',
-      yardAddress: 'Plot 45, Near Aggarwal Dharamshala, Sanoli Road, Panipat - 132103',
-      primaryInventoryTypes: ['Korean Heavy Puffers', 'USA Fleece Hoodies', 'Leather Bombers'],
-      gstin: '06AABCU9603R1ZM',
-      isGstinRegistered: true,
-      bankAccountNumber: '91802001928374',
-      bankIfscCode: 'HDFC0001234',
-      accountHolderName: 'Gupta Wholesale Textile Syndicate',
-      bankName: 'HDFC Bank, G.T. Road Panipat',
-      gstDocUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
-      yardPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      verificationStatus: 'approved',
-      rating: 4.9,
-      totalDispatchedBales: 420,
-      repeatBuyerRate: 94,
-      createdAt: '2026-08-10',
-      appliedAt: '10 Aug 2026',
-    },
-    {
-      id: 'pnp-app-002',
-      maskedCode: '#PNP-002',
-      fullName: 'Ramesh Verma',
-      phone: '+91 98234 56789',
-      email: 'haryana.overseas.pnp@gmail.com',
-      businessName: 'Haryana Overseas Mill Yard',
-      godownZone: 'Noorwala Industrial Area',
-      yardAddress: 'Gali 4, Industrial Area Noorwala, Panipat - 132103',
-      primaryInventoryTypes: ['Vintage 90s Baggy Denim', 'Duck Canvas Jackets'],
-      gstin: '06AACCH1234K1ZV',
-      isGstinRegistered: true,
-      bankAccountNumber: '50200019283746',
-      bankIfscCode: 'ICIC0000456',
-      accountHolderName: 'Haryana Overseas Mill Yard',
-      bankName: 'ICICI Bank, Noorwala Panipat',
-      gstDocUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
-      yardPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      verificationStatus: 'approved',
-      rating: 4.8,
-      totalDispatchedBales: 310,
-      repeatBuyerRate: 91,
-      createdAt: '2026-08-14',
-      appliedAt: '14 Aug 2026',
-    },
-    {
-      id: 'pnp-app-005',
-      maskedCode: 'PENDING',
-      fullName: 'Pawan Mittal',
-      phone: '+91 98345 67890',
-      email: 'mittal.woollen.mills@rediffmail.com',
-      businessName: 'Mittal Woollen & Acrylic Godown',
-      godownZone: 'Sanoli Road Godown Hub',
-      yardAddress: 'Shed 12, Sanoli By-Pass, Panipat - 132103',
-      primaryInventoryTypes: ['Mink Blankets', 'Woolen Trench Overcoats', 'Heavy Knit Sweaters'],
-      gstin: '06AABPM4567P1ZR',
-      isGstinRegistered: true,
-      bankAccountNumber: '30918273645',
-      bankIfscCode: 'SBIN0001234',
-      accountHolderName: 'Mittal Woollen Godown',
-      bankName: 'State Bank of India, Sanoli Road',
-      gstDocUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
-      yardPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      verificationStatus: 'pending_approval',
-      rating: 5.0,
-      totalDispatchedBales: 0,
-      repeatBuyerRate: 0,
-      createdAt: '2026-08-28',
-      appliedAt: '28 Aug 2026 (Yesterday)',
-    },
-    {
-      id: 'pnp-app-006',
-      maskedCode: 'PENDING',
-      fullName: 'Vikram Batra',
-      phone: '+91 98456 78901',
-      email: 'batra.thrift.imports@gmail.com',
-      businessName: 'Batra Global Thrift Importers',
-      godownZone: 'Barsat Road Sorting Yard',
-      yardAddress: 'Plot 88, Near Khadi Ashram, Barsat Road, Panipat - 132103',
-      primaryInventoryTypes: ['Tactical Multi-Pocket Cargo', 'Japanese Flight Bombers'],
-      gstin: '06AACPB7890J1ZT',
-      isGstinRegistered: true,
-      bankAccountNumber: '0192837465',
-      bankIfscCode: 'PUNB0123400',
-      accountHolderName: 'Batra Global Imports',
-      bankName: 'Punjab National Bank, Barsat Road',
-      gstDocUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&w=800&q=80',
-      yardPhotoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
-      verificationStatus: 'pending_approval',
-      rating: 5.0,
-      totalDispatchedBales: 0,
-      repeatBuyerRate: 0,
-      createdAt: '2026-08-29',
-      appliedAt: '29 Aug 2026 (Today)',
-    },
-  ]);
+  // Clean Sellers State for real testing
+  const [sellersList, setSellersList] = useState<SellerApplicant[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sp_registered_sellers');
+      const activeSeller = localStorage.getItem('sp_active_seller');
+      let combined: SellerApplicant[] = [];
+      if (stored) {
+        try {
+          combined = JSON.parse(stored);
+        } catch (e) {}
+      }
+      if (activeSeller) {
+        try {
+          const parsed = JSON.parse(activeSeller);
+          if (!combined.some(s => s.id === parsed.id || s.email === parsed.email)) {
+            combined.push(parsed);
+          }
+        } catch (e) {}
+      }
+      setSellersList(combined);
+    }
+  }, []);
 
   // Actions: Approve / Reject
   const handleApproveSeller = (sellerId: string) => {
-    const nextCodeNumber = sellersList.filter(s => s.maskedCode.startsWith('#PNP-')).length + 1;
+    const nextCodeNumber = sellersList.filter(s => s.maskedCode && s.maskedCode.startsWith('#PNP-')).length + 1;
     const assignedCode = `#PNP-${String(nextCodeNumber).padStart(3, '0')}`;
 
-    setSellersList(prev => prev.map(s => {
+    const updated = sellersList.map(s => {
       if (s.id === sellerId) {
-        return {
+        const approvedSeller = {
           ...s,
           maskedCode: assignedCode,
-          verificationStatus: 'approved',
+          verificationStatus: 'approved' as VerificationStatus,
         };
+        // Sync back to active seller if matches
+        if (typeof window !== 'undefined') {
+          const activeSeller = localStorage.getItem('sp_active_seller');
+          if (activeSeller) {
+            try {
+              const active = JSON.parse(activeSeller);
+              if (active.id === sellerId || active.email === s.email) {
+                localStorage.setItem('sp_active_seller', JSON.stringify(approvedSeller));
+              }
+            } catch (e) {}
+          }
+        }
+        return approvedSeller;
       }
       return s;
-    }));
+    });
+
+    setSellersList(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sp_registered_sellers', JSON.stringify(updated));
+    }
+
 
     if (selectedSeller && selectedSeller.id === sellerId) {
       setSelectedSeller(prev => prev ? { ...prev, maskedCode: assignedCode, verificationStatus: 'approved' } : null);
