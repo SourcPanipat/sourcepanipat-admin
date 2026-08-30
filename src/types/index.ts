@@ -71,6 +71,8 @@ export interface AdminBaleListingItem {
   createdAt: string;
 }
 
+export type AccountStatus = 'active' | 'deactivated' | 'frozen';
+
 export interface SellerApplicant {
   id: string;
   maskedCode: string; // '#PNP-001'
@@ -90,6 +92,7 @@ export interface SellerApplicant {
   gstDocUrl?: string;
   yardPhotoUrl?: string;
   verificationStatus: VerificationStatus;
+  accountStatus?: AccountStatus; // 'active' | 'deactivated' | 'frozen'
   rejectionReason?: string;
   rating: number;
   totalDispatchedBales: number;
@@ -97,6 +100,7 @@ export interface SellerApplicant {
   createdAt: string;
   appliedAt: string;
 }
+
 
 export interface InspectorFieldAgent {
   id: string;

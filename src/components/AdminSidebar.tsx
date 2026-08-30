@@ -17,31 +17,27 @@ import {
   FileCheck
 } from 'lucide-react';
 
+import { getDashboardKpiMetricsFromDb } from '@/lib/supabase-admin';
+
 export function AdminSidebar() {
   const pathname = usePathname();
   const [pendingLots, setPendingLots] = React.useState(0);
   const [pendingSellers, setPendingSellers] = React.useState(0);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    // Check pending sellers
-    const storedSellers = localStorage.getItem('sp_registered_sellers');
-    const activeSeller = localStorage.getItem('sp_active_seller');
-    let allS = [];
-    if (storedSellers) try { allS = JSON.parse(storedSellers); } catch (e) {}
-    if (activeSeller) try {
-      const p = JSON.parse(activeSeller);
-      if (!allS.some((s: any) => s.id === p.id)) allS.push(p);
-    } catch (e) {}
-    setPendingSellers(allS.filter((s: any) => s.verificationStatus === 'pending_approval').length);
+    async function loadSidebarBadges() {
+      try {
+        const metrics = await getDashboardKpiMetricsFromDb();
+        setPendingLots(metrics.pendingListingsCount);
+        setPendingSellers(metrics.pendingKYCCount);
+      } catch (e) {
+        console.warn('Error fetching sidebar badges from Supabase:', e);
+      }
+    }
 
-    // Check pending lots
-    const storedLots = localStorage.getItem('sp_seller_lots');
-    let allL = [];
-    if (storedLots) try { allL = JSON.parse(storedLots); } catch (e) {}
-    setPendingLots(allL.filter((l: any) => l.status === 'pending_approval').length);
+    loadSidebarBadges();
   }, [pathname]);
+
 
   const navItems = [
     {

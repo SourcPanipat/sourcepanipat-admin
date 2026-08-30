@@ -25,75 +25,59 @@ import {
   ChevronRight,
   ExternalLink,
   Check,
-  X
+  X,
+  Loader2, 
+  RefreshCw 
 } from 'lucide-react';
-
-const INITIAL_ADMIN_LOTS: AdminBaleListingItem[] = [];
-
+import { 
+  getAllListingsForAdminFromDb, 
+  approveListingInDb, 
+  rejectListingInDb 
+} from '@/lib/supabase-admin';
 
 export default function ListingApprovalsPage() {
   const [lots, setLots] = useState<AdminBaleListingItem[]>([]);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLot, setSelectedLot] = useState<AdminBaleListingItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   
   // Rejection modal state
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [activeLotForAction, setActiveLotForAction] = useState<AdminBaleListingItem | null>(null);
 
-  // Sync from localStorage
-  useEffect(() => {
-    let combined = [...INITIAL_ADMIN_LOTS];
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sp_seller_lots');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const mappedParsed = parsed.map((p: any) => ({
-            ...p,
-            sellerMaskedCode: p.sellerMaskedCode || '#PNP-001',
-            sellerFullName: p.sellerFullName || 'Rajesh Gupta',
-            sellerBusinessName: p.sellerBusinessName || 'Gupta Syndicate',
-            status: p.status || 'pending_approval',
-          }));
-          combined = [...mappedParsed, ...INITIAL_ADMIN_LOTS];
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-    setLots(combined);
-  }, []);
-
-  const saveLots = (updated: AdminBaleListingItem[]) => {
-    setLots(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sp_seller_lots', JSON.stringify(updated));
+  const loadListings = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAllListingsForAdminFromDb();
+      setLots(data);
+    } catch (err) {
+      console.error('Failed to load listings in admin:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleApprove = (lot: AdminBaleListingItem) => {
-    const updated = lots.map((l) => {
-      if (l.id === lot.id) {
-        return {
-          ...l,
-          status: 'approved' as ListingStatus,
-          statusUpdatedAt: new Date().toISOString(),
-          rejectionReason: undefined,
-          isEdited: false,
-        };
+  useEffect(() => {
+    loadListings();
+  }, []);
+
+  const handleApprove = async (lot: AdminBaleListingItem) => {
+    setActionLoading(true);
+    try {
+      const updated = await approveListingInDb(lot.id);
+      if (updated) {
+        setLots((prev) => prev.map((l) => (l.id === lot.id ? updated : l)));
+        if (selectedLot?.id === lot.id) {
+          setSelectedLot(updated);
+        }
       }
-      return l;
-    });
-    saveLots(updated);
-    if (selectedLot?.id === lot.id) {
-      setSelectedLot({
-        ...selectedLot,
-        status: 'approved',
-        statusUpdatedAt: new Date().toISOString(),
-        rejectionReason: undefined,
-      });
+    } catch (err: any) {
+      alert('Failed to approve listing in database: ' + (err.message || 'Unknown error'));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -103,30 +87,26 @@ export default function ListingApprovalsPage() {
     setIsRejectModalOpen(true);
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (!activeLotForAction) return;
-    const updated = lots.map((l) => {
-      if (l.id === activeLotForAction.id) {
-        return {
-          ...l,
-          status: 'rejected' as ListingStatus,
-          rejectionReason: rejectReason || 'Quality specs or video criteria not meeting Panipat QC requirements.',
-          statusUpdatedAt: new Date().toISOString(),
-        };
+    setActionLoading(true);
+    try {
+      const reason = rejectReason || 'Quality specs or video criteria not meeting Panipat QC requirements.';
+      const updated = await rejectListingInDb(activeLotForAction.id, reason);
+      if (updated) {
+        setLots((prev) => prev.map((l) => (l.id === activeLotForAction.id ? updated : l)));
+        if (selectedLot?.id === activeLotForAction.id) {
+          setSelectedLot(updated);
+        }
       }
-      return l;
-    });
-    saveLots(updated);
-    if (selectedLot?.id === activeLotForAction.id) {
-      setSelectedLot({
-        ...selectedLot,
-        status: 'rejected',
-        rejectionReason: rejectReason || 'Quality specs or video criteria not meeting Panipat QC requirements.',
-        statusUpdatedAt: new Date().toISOString(),
-      });
+      setIsRejectModalOpen(false);
+      setRejectReason('');
+    } catch (err: any) {
+      alert('Failed to reject listing: ' + (err.message || 'Unknown error'));
+    } finally {
+      setActionLoading(false);
+      setActiveLotForAction(null);
     }
-    setIsRejectModalOpen(false);
-    setActiveLotForAction(null);
   };
 
   const filteredLots = lots.filter((lot) => {
@@ -168,7 +148,17 @@ export default function ListingApprovalsPage() {
             Audit newly created seller lots and price edits before publishing live on the Panipat B2B marketplace
           </p>
         </div>
+
+        <button
+          onClick={loadListings}
+          disabled={isLoading}
+          className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs w-fit cursor-pointer"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>Refresh Listings</span>
+        </button>
       </div>
+
 
       {/* Filter Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
