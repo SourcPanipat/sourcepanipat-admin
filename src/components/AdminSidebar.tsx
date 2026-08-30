@@ -28,8 +28,9 @@ export function AdminSidebar() {
     async function loadSidebarBadges() {
       try {
         const metrics = await getDashboardKpiMetricsFromDb();
-        setPendingLots(metrics.pendingListingsCount);
-        setPendingSellers(metrics.pendingKYCCount);
+        setPendingLots(metrics.pendingListings || 0);
+        setPendingSellers(metrics.pendingSellers || 0);
+
       } catch (e) {
         console.warn('Error fetching sidebar badges from Supabase:', e);
       }

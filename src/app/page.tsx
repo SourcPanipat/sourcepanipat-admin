@@ -45,21 +45,21 @@ export default function AdminDashboardPage() {
         getAllListingsForAdminFromDb(),
       ]);
 
-      const pendingSellers = sellers.filter(s => s.verificationStatus === 'pending_approval');
-      const pendingLots = listings.filter(l => l.status === 'pending_approval');
+      const pendingSellers = (sellers as any[]).filter((s: any) => s.verificationStatus === 'pending_approval');
+      const pendingLots = (listings as any[]).filter((l: any) => l.status === 'pending_approval');
 
       setPendingSellersCount(pendingSellers.length);
       setPendingLotsCount(pendingLots.length);
       setTotalSellersCount(sellers.length);
-      setTotalEscrowHeld(kpiMetrics.totalEscrowHeld);
-      setRecentOrders(kpiMetrics.recentOrders);
+      setTotalEscrowHeld(kpiMetrics.totalEscrowVolume || 0);
+      setRecentOrders((kpiMetrics as any).recentOrders || []);
 
       // Build Urgent Actions
       const actions: any[] = [];
-      pendingSellers.forEach(s => {
+      pendingSellers.forEach((s: any) => {
         actions.push({
           id: `kyc-${s.id}`,
-          title: `Godown Application: ${s.businessName || s.fullName} (${s.maskedCode || 'PENDING'})`,
+          title: `Godown Application: ${s.businessName || s.fullName} (${s.assignedMaskedCode || s.maskedCode || 'PENDING'})`,
           type: 'KYC Review',
           desc: `${s.godownZone || 'Panipat Godown Hub'} • GSTIN & premises submitted. Needs audit.`,
           href: '/sellers',
@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
         });
       });
 
-      pendingLots.forEach(l => {
+      pendingLots.forEach((l: any) => {
         actions.push({
           id: `lot-${l.id}`,
           title: `Staged Bale Approval: ${l.title} (${l.sellerMaskedCode || '#PNP'})`,
@@ -81,6 +81,7 @@ export default function AdminDashboardPage() {
       });
 
       setUrgentActions(actions);
+
     } catch (err) {
       console.error('Error loading admin dashboard metrics:', err);
     } finally {

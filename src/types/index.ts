@@ -35,7 +35,9 @@ export interface AdminBaleListingItem {
   sellerMaskedCode?: string;
   sellerFullName?: string;
   sellerBusinessName?: string;
+  sellerGodownZone?: string;
   categoryId: string;
+
   subCategoryId: string;
   categoryLabel: string;
   title: string;
@@ -76,6 +78,7 @@ export type AccountStatus = 'active' | 'deactivated' | 'frozen';
 export interface SellerApplicant {
   id: string;
   maskedCode: string; // '#PNP-001'
+  assignedMaskedCode?: string;
   fullName: string;
   phone: string;
   email: string;
@@ -83,6 +86,7 @@ export interface SellerApplicant {
   godownZone: string;
   yardAddress: string;
   primaryInventoryTypes: string[];
+  logoUrl?: string;
   gstin?: string;
   isGstinRegistered: boolean;
   bankAccountNumber: string;
@@ -94,12 +98,14 @@ export interface SellerApplicant {
   verificationStatus: VerificationStatus;
   accountStatus?: AccountStatus; // 'active' | 'deactivated' | 'frozen'
   rejectionReason?: string;
-  rating: number;
-  totalDispatchedBales: number;
-  repeatBuyerRate: number;
+  approvedAt?: string;
+  rating?: number;
+  totalDispatchedBales?: number;
+  repeatBuyerRate?: number;
   createdAt: string;
   appliedAt: string;
 }
+
 
 
 export interface InspectorFieldAgent {
@@ -179,3 +185,21 @@ export interface AdminOrderRecord {
   transporterName?: string;
   createdAt: string;
 }
+
+export interface DashboardKpiMetrics {
+  totalSellers: number;
+  pendingSellers: number;
+  approvedSellers: number;
+  totalListings: number;
+  pendingListings: number;
+  approvedListings: number;
+  totalOrders: number;
+  totalEscrowVolume: number;
+  totalPlatformRevenue: number;
+  escrowLockedCount: number;
+  totalEscrowHeld?: number;
+  recentOrders?: any[];
+  pendingListingsCount?: number;
+  pendingKYCCount?: number;
+}
+

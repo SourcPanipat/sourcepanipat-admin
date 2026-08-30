@@ -1,53 +1,85 @@
+import { turso } from './turso';
 import { createClient } from '@supabase/supabase-js';
-import { SellerApplicant, AdminBaleListingItem, VerificationStatus, AccountStatus, ListingStatus } from '@/types';
+import { SellerApplicant, AdminBaleListingItem, AccountStatus, DashboardKpiMetrics } from '@/types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aqkbiugtxpnjmkeigdnl.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxa2JpdWd0eHBuam1rZWlnZG5sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NTUyMTcsImV4cCI6MjEwMzUzMTIxN30.Fy_2E6qi0HA0n3qQohHFXi1X3zFQhzpKI3jj8lUZmpY';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { persistSession: false },
+});
 
-// Map DB seller row to SellerApplicant
+// Helper: map Turso row to SellerApplicant
 export function mapDbSellerToApplicant(row: any): SellerApplicant {
+  let primaryTypes: string[] = [];
+  try {
+    if (typeof row.primary_inventory_types === 'string') {
+      primaryTypes = JSON.parse(row.primary_inventory_types);
+    } else if (Array.isArray(row.primary_inventory_types)) {
+      primaryTypes = row.primary_inventory_types;
+    }
+  } catch (e) {}
+
   return {
     id: row.id,
-    maskedCode: row.masked_code || '#PNP-PENDING',
-    fullName: row.full_name,
-    phone: row.phone,
-    email: row.email,
-    businessName: row.business_name,
-    godownZone: row.godown_zone,
-    yardAddress: row.yard_address,
-    primaryInventoryTypes: Array.isArray(row.primary_inventory_types)
-      ? row.primary_inventory_types
-      : (typeof row.primary_inventory_types === 'string' ? JSON.parse(row.primary_inventory_types) : []),
-    gstin: row.gstin,
+    fullName: row.full_name || '',
+    phone: row.phone || '',
+    email: row.email || '',
+    businessName: row.business_name || '',
+    godownZone: row.godown_zone || 'Sanoli Road Godown Hub',
+    yardAddress: row.yard_address || '',
+    primaryInventoryTypes: primaryTypes,
+    logoUrl: row.logo_url || undefined,
+    gstin: row.gstin || undefined,
     isGstinRegistered: Boolean(row.is_gstin_registered),
     bankAccountNumber: row.bank_account_number || '',
     bankIfscCode: row.bank_ifsc_code || '',
     accountHolderName: row.account_holder_name || '',
     bankName: row.bank_name || '',
-    gstDocUrl: row.gst_doc_url,
-    yardPhotoUrl: row.yard_photo_url,
+    gstDocUrl: row.gst_doc_url || undefined,
+    yardPhotoUrl: row.yard_photo_url || undefined,
     verificationStatus: row.verification_status || 'pending_approval',
-    accountStatus: row.account_status || 'active',
-    rejectionReason: row.rejection_reason,
-    rating: row.rating ?? 5.0,
-    totalDispatchedBales: row.total_dispatched_bales ?? 0,
-    repeatBuyerRate: row.repeat_buyer_rate ?? 100,
+    accountStatus: (row.account_status as AccountStatus) || 'active',
+    rejectionReason: row.rejection_reason || undefined,
+    approvedAt: row.approved_at || undefined,
+    maskedCode: row.masked_code || '#PNP-001',
+    assignedMaskedCode: row.masked_code || undefined,
     createdAt: row.created_at || new Date().toISOString(),
     appliedAt: row.created_at || new Date().toISOString(),
   };
 }
 
-// Map DB listing row to AdminBaleListingItem
+
+// Helper: map Turso row to AdminBaleListingItem
 export function mapDbListingToAdminItem(row: any, sellerRow?: any): AdminBaleListingItem {
+  let gallery: string[] = [];
+  let videos: string[] = [];
+  let photos: string[] = [];
+
+  try {
+    if (typeof row.gallery_images === 'string') gallery = JSON.parse(row.gallery_images);
+    else if (Array.isArray(row.gallery_images)) gallery = row.gallery_images;
+  } catch (e) {}
+
+  try {
+    if (typeof row.videos === 'string') videos = JSON.parse(row.videos);
+    else if (Array.isArray(row.videos)) videos = row.videos;
+  } catch (e) {}
+
+  try {
+    if (typeof row.photos === 'string') photos = JSON.parse(row.photos);
+    else if (Array.isArray(row.photos)) photos = row.photos;
+  } catch (e) {}
+
+  const seller = sellerRow ? mapDbSellerToApplicant(sellerRow) : undefined;
+
   return {
     id: row.id,
     slug: row.slug,
     sellerId: row.seller_id,
-    sellerMaskedCode: sellerRow?.masked_code || row.seller_masked_code || '#PNP-001',
-    sellerFullName: sellerRow?.full_name || row.seller_full_name || 'Panipat Trader',
-    sellerBusinessName: sellerRow?.business_name || row.seller_business_name || 'Panipat Godown Syndicate',
+    sellerMaskedCode: seller?.assignedMaskedCode || row.masked_code || '#PNP-001',
+    sellerBusinessName: seller?.businessName || row.business_name || 'Panipat Godown Hub',
+    sellerGodownZone: seller?.godownZone || row.godown_zone || 'Sanoli Road Godown Hub',
     categoryId: row.category_id || 'winter-jackets-outerwear',
     subCategoryId: row.sub_category_id || 'heavy-puffers',
     categoryLabel: row.category_label || 'Wholesale Textiles',
@@ -57,7 +89,7 @@ export function mapDbListingToAdminItem(row: any, sellerRow?: any): AdminBaleLis
     originCountry: row.origin_country || 'South Korea',
     originFlag: row.origin_flag || 'KR',
     thumbnailUrl: row.thumbnail_url || 'https://images.unsplash.com/photo-1548883354-7622d03aca27?auto=format&fit=crop&w=800&q=80',
-    galleryImages: Array.isArray(row.gallery_images) ? row.gallery_images : [],
+    galleryImages: gallery,
     weightKg: row.weight_kg ?? 80,
     estimatedPieceCount: row.estimated_piece_count ?? 70,
     sealedBalePrice: row.sealed_bale_price ?? 30000,
@@ -66,215 +98,291 @@ export function mapDbListingToAdminItem(row: any, sellerRow?: any): AdminBaleLis
     gradeA: row.grade_a ?? 85,
     gradeB: row.grade_b ?? 12,
     gradeC: row.grade_c ?? 3,
-    videos: Array.isArray(row.videos) ? row.videos : [],
-    photos: Array.isArray(row.photos) ? row.photos : [],
+    videos: videos.map((url, idx) => ({
+      id: `vid-${idx}`,
+      type: 'opening_inspection' as const,
+      grade: 'Grade A' as const,
+      videoUrl: url,
+      durationSeconds: 30,
+      label: idx === 0 ? 'Bale Wire-Cut Inspection' : 'Core Stack Quality Check',
+      description: 'Verified 30s uncut Panipat godown opening preview',
+    })),
+    photos: photos,
     godownBatchId: row.godown_batch_id || 'BATCH-SANOLI-2026',
     qcVerified: Boolean(row.qc_verified),
     inStockCount: row.in_stock_count ?? 1,
     fabricComposition: row.fabric_composition || 'Premium Graded Fabric',
     expectedGrossMargin: row.expected_gross_margin || '3.5x - 5.0x Margin',
     status: row.status || 'pending_approval',
-    pendingEditJson: typeof row.pending_edit_json === 'string' ? row.pending_edit_json : JSON.stringify(row.pending_edit_json),
-    rejectionReason: row.rejection_reason,
+    pendingEditJson: typeof row.pending_edit_json === 'string' ? row.pending_edit_json : JSON.stringify(row.pending_edit_json || null),
+    rejectionReason: row.rejection_reason || undefined,
     isEdited: Boolean(row.pending_edit_json),
     statusUpdatedAt: row.updated_at,
     createdAt: row.created_at || new Date().toISOString(),
   };
 }
 
+
 // -------------------------------------------------------------
-// ADMIN ACTIONS: SELLERS
+// ADMIN ACTIONS: DASHBOARD KPIS (TURSO LIB-SQL EDGE DB)
+// -------------------------------------------------------------
+
+export async function getDashboardKpiMetricsFromDb(): Promise<DashboardKpiMetrics> {
+  try {
+    const [sellersRes, listingsRes, ordersRes] = await Promise.all([
+      turso.execute("SELECT verification_status, account_status FROM sellers;"),
+      turso.execute("SELECT status FROM listings;"),
+      turso.execute("SELECT escrow_status, total_amount, platform_fee FROM escrow_orders;"),
+    ]);
+
+    const totalSellers = sellersRes.rows.length;
+    const pendingSellers = sellersRes.rows.filter(r => r.verification_status === 'pending_approval').length;
+    const approvedSellers = sellersRes.rows.filter(r => r.verification_status === 'approved').length;
+
+    const totalListings = listingsRes.rows.length;
+    const pendingListings = listingsRes.rows.filter(r => r.status === 'pending_approval').length;
+    const approvedListings = listingsRes.rows.filter(r => r.status === 'approved').length;
+
+    const totalOrders = ordersRes.rows.length;
+    let totalEscrowVolume = 0;
+    let totalPlatformRevenue = 0;
+
+    ordersRes.rows.forEach((r: any) => {
+      totalEscrowVolume += Number(r.total_amount || 0);
+      totalPlatformRevenue += Number(r.platform_fee || 0);
+    });
+
+    return {
+      totalSellers,
+      pendingSellers,
+      approvedSellers,
+      totalListings,
+      pendingListings,
+      approvedListings,
+      totalOrders,
+      totalEscrowVolume,
+      totalPlatformRevenue,
+      escrowLockedCount: ordersRes.rows.filter((r: any) => r.escrow_status === 'ESCROW_LOCKED').length,
+    };
+  } catch (err) {
+    console.error('getDashboardKpiMetricsFromDb Turso exception:', err);
+    return {
+      totalSellers: 0,
+      pendingSellers: 0,
+      approvedSellers: 0,
+      totalListings: 0,
+      pendingListings: 0,
+      approvedListings: 0,
+      totalOrders: 0,
+      totalEscrowVolume: 0,
+      totalPlatformRevenue: 0,
+      escrowLockedCount: 0,
+    };
+  }
+}
+
+// -------------------------------------------------------------
+// ADMIN ACTIONS: SELLERS (TURSO LIB-SQL EDGE DB)
 // -------------------------------------------------------------
 
 export async function getAllSellersFromDb(limit = 100): Promise<SellerApplicant[]> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('sellers')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      console.error('Error fetching all sellers in admin:', error);
-      return [];
-    }
-    return (data || []).map(mapDbSellerToApplicant);
+    const res = await turso.execute({
+      sql: 'SELECT * FROM sellers ORDER BY created_at DESC LIMIT :limit;',
+      args: { limit },
+    });
+    return res.rows.map(mapDbSellerToApplicant);
   } catch (err) {
-    console.error('getAllSellersFromDb exception:', err);
+    console.error('getAllSellersFromDb Turso exception:', err);
     return [];
   }
 }
 
 export async function approveSellerInDb(sellerId: string, assignedMaskedCode: string): Promise<SellerApplicant | null> {
-  const { data, error } = await supabaseAdmin
-    .from('sellers')
-    .update({
-      verification_status: 'approved',
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `
+      UPDATE sellers SET
+        verification_status = 'approved',
+        masked_code = :masked_code,
+        approved_at = :approved_at,
+        rejection_reason = NULL
+      WHERE id = :id;
+    `,
+    args: {
+      id: sellerId,
       masked_code: assignedMaskedCode,
-      approved_at: new Date().toISOString(),
-      rejection_reason: null,
-    })
-    .eq('id', sellerId)
-    .select()
-    .single();
+      approved_at: now,
+    },
+  });
 
-  if (error) throw error;
-  return mapDbSellerToApplicant(data);
+  const res = await turso.execute({
+    sql: 'SELECT * FROM sellers WHERE id = :id LIMIT 1;',
+    args: { id: sellerId },
+  });
+
+  return res.rows.length > 0 ? mapDbSellerToApplicant(res.rows[0]) : null;
 }
 
 export async function rejectSellerInDb(sellerId: string, rejectionReason: string): Promise<SellerApplicant | null> {
-  const { data, error } = await supabaseAdmin
-    .from('sellers')
-    .update({
-      verification_status: 'rejected',
+  await turso.execute({
+    sql: `
+      UPDATE sellers SET
+        verification_status = 'rejected',
+        rejection_reason = :rejection_reason
+      WHERE id = :id;
+    `,
+    args: {
+      id: sellerId,
       rejection_reason: rejectionReason,
-    })
-    .eq('id', sellerId)
-    .select()
-    .single();
+    },
+  });
 
-  if (error) throw error;
-  return mapDbSellerToApplicant(data);
+  const res = await turso.execute({
+    sql: 'SELECT * FROM sellers WHERE id = :id LIMIT 1;',
+    args: { id: sellerId },
+  });
+
+  return res.rows.length > 0 ? mapDbSellerToApplicant(res.rows[0]) : null;
 }
 
 export async function updateSellerAccountStatusInDb(sellerId: string, accountStatus: AccountStatus): Promise<SellerApplicant | null> {
-  const { data, error } = await supabaseAdmin
-    .from('sellers')
-    .update({
-      account_status: accountStatus,
-    })
-    .eq('id', sellerId)
-    .select()
-    .single();
+  await turso.execute({
+    sql: `UPDATE sellers SET account_status = :account_status WHERE id = :id;`,
+    args: { id: sellerId, account_status: accountStatus },
+  });
 
-  if (error) throw error;
-  return mapDbSellerToApplicant(data);
+  const res = await turso.execute({
+    sql: 'SELECT * FROM sellers WHERE id = :id LIMIT 1;',
+    args: { id: sellerId },
+  });
+
+  return res.rows.length > 0 ? mapDbSellerToApplicant(res.rows[0]) : null;
 }
 
 // -------------------------------------------------------------
-// ADMIN ACTIONS: LISTINGS
+// ADMIN ACTIONS: LISTINGS (TURSO LIB-SQL EDGE DB)
 // -------------------------------------------------------------
 
 export async function getAllListingsForAdminFromDb(limit = 100): Promise<AdminBaleListingItem[]> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('listings')
-      .select('*, sellers(*)')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const res = await turso.execute({
+      sql: `
+        SELECT l.*, s.masked_code, s.full_name as seller_full_name, s.business_name, s.godown_zone,
+               s.rating as seller_rating, s.trust_score as seller_trust_score, s.verification_status, s.account_status
+        FROM listings l
+        JOIN sellers s ON l.seller_id = s.id
+        ORDER BY l.created_at DESC
+        LIMIT :limit;
+      `,
+      args: { limit },
+    });
 
-    if (error) {
-      console.error('Error fetching admin listings:', error);
-      return [];
-    }
-
-    return (data || []).map((row: any) => mapDbListingToAdminItem(row, row.sellers));
+    return res.rows.map((row: any) => {
+      const sellerMock = {
+        id: row.seller_id,
+        assignedMaskedCode: row.masked_code,
+        fullName: row.seller_full_name,
+        businessName: row.business_name,
+        godownZone: row.godown_zone,
+        verificationStatus: row.verification_status,
+        accountStatus: row.account_status,
+      };
+      return mapDbListingToAdminItem(row, sellerMock);
+    });
   } catch (err) {
-    console.error('getAllListingsForAdminFromDb exception:', err);
+    console.error('getAllListingsForAdminFromDb Turso exception:', err);
     return [];
   }
 }
 
-
 export async function approveListingInDb(listingId: string): Promise<AdminBaleListingItem | null> {
-  // If there was a pending edit, apply it
-  const { data: current } = await supabaseAdmin.from('listings').select('*').eq('id', listingId).single();
-  const pendingUpdates = current?.pending_edit_json || {};
+  const curRes = await turso.execute({
+    sql: 'SELECT * FROM listings WHERE id = :id LIMIT 1;',
+    args: { id: listingId },
+  });
 
-  const updates: any = {
-    status: 'approved',
-    pending_edit_json: null,
-    rejection_reason: null,
-    updated_at: new Date().toISOString(),
-  };
+  const current = curRes.rows[0];
+  let pendingUpdates: any = {};
+  try {
+    if (typeof current?.pending_edit_json === 'string') {
+      pendingUpdates = JSON.parse(current.pending_edit_json);
+    }
+  } catch (e) {}
 
-  if (pendingUpdates.title) updates.title = pendingUpdates.title;
-  if (pendingUpdates.sealedBalePrice !== undefined) updates.sealed_bale_price = pendingUpdates.sealedBalePrice;
-  if (pendingUpdates.curatedPiecePrice !== undefined) updates.curated_piece_price = pendingUpdates.curatedPiecePrice;
-  if (pendingUpdates.inStockCount !== undefined) updates.in_stock_count = pendingUpdates.inStockCount;
+  const now = new Date().toISOString();
+  const fields = [
+    "status = 'approved'",
+    'pending_edit_json = NULL',
+    'rejection_reason = NULL',
+    'updated_at = :updated_at',
+  ];
+  const args: any = { id: listingId, updated_at: now };
 
-  const { data, error } = await supabaseAdmin
-    .from('listings')
-    .update(updates)
-    .eq('id', listingId)
-    .select('*, sellers(*)')
-    .single();
+  if (pendingUpdates.title) { fields.push('title = :title'); args.title = pendingUpdates.title; }
+  if (pendingUpdates.sealedBalePrice !== undefined) { fields.push('sealed_bale_price = :sealed_bale_price'); args.sealed_bale_price = pendingUpdates.sealedBalePrice; }
+  if (pendingUpdates.curatedPiecePrice !== undefined) { fields.push('curated_piece_price = :curated_piece_price'); args.curated_piece_price = pendingUpdates.curatedPiecePrice; }
+  if (pendingUpdates.inStockCount !== undefined) { fields.push('in_stock_count = :in_stock_count'); args.in_stock_count = pendingUpdates.inStockCount; }
 
-  if (error) throw error;
-  return mapDbListingToAdminItem(data, data.sellers);
+  await turso.execute({
+    sql: `UPDATE listings SET ${fields.join(', ')} WHERE id = :id;`,
+    args,
+  });
+
+  const res = await turso.execute({
+    sql: `
+      SELECT l.*, s.masked_code, s.business_name, s.godown_zone
+      FROM listings l
+      JOIN sellers s ON l.seller_id = s.id
+      WHERE l.id = :id
+      LIMIT 1;
+    `,
+    args: { id: listingId },
+  });
+
+  return res.rows.length > 0 ? mapDbListingToAdminItem(res.rows[0], res.rows[0]) : null;
 }
 
 export async function rejectListingInDb(listingId: string, rejectionReason: string): Promise<AdminBaleListingItem | null> {
-  const { data, error } = await supabaseAdmin
-    .from('listings')
-    .update({
-      status: 'rejected',
-      rejection_reason: rejectionReason,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', listingId)
-    .select('*, sellers(*)')
-    .single();
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: `
+      UPDATE listings SET
+        status = 'rejected',
+        rejection_reason = :rejection_reason,
+        updated_at = :updated_at
+      WHERE id = :id;
+    `,
+    args: { id: listingId, rejection_reason: rejectionReason, updated_at: now },
+  });
 
-  if (error) throw error;
-  return mapDbListingToAdminItem(data, data.sellers);
+  const res = await turso.execute({
+    sql: `
+      SELECT l.*, s.masked_code, s.business_name, s.godown_zone
+      FROM listings l
+      JOIN sellers s ON l.seller_id = s.id
+      WHERE l.id = :id
+      LIMIT 1;
+    `,
+    args: { id: listingId },
+  });
+
+  return res.rows.length > 0 ? mapDbListingToAdminItem(res.rows[0], res.rows[0]) : null;
 }
 
 // -------------------------------------------------------------
-// ADMIN ACTIONS: ORDERS & KPIS
+// ADMIN ACTIONS: ESCROW ORDERS (TURSO LIB-SQL EDGE DB)
 // -------------------------------------------------------------
 
-export async function getAllEscrowOrdersForAdminFromDb(): Promise<any[]> {
+export async function getAllEscrowOrdersFromDb(limit = 100): Promise<any[]> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('escrow_orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching admin escrow orders:', error);
-      return [];
-    }
-    return data || [];
+    const res = await turso.execute({
+      sql: 'SELECT * FROM escrow_orders ORDER BY created_at DESC LIMIT :limit;',
+      args: { limit },
+    });
+    return res.rows;
   } catch (err) {
-    console.error('getAllEscrowOrdersForAdminFromDb exception:', err);
+    console.error('getAllEscrowOrdersFromDb Turso exception:', err);
     return [];
-  }
-}
-
-export async function getDashboardKpiMetricsFromDb() {
-  try {
-    const [sellersRes, listingsRes, ordersRes] = await Promise.all([
-      supabaseAdmin.from('sellers').select('verification_status, account_status'),
-      supabaseAdmin.from('listings').select('status'),
-      supabaseAdmin.from('escrow_orders').select('total_amount, escrow_status, created_at, order_number, bale_title, buyer_city'),
-    ]);
-
-    const allSellers = sellersRes.data || [];
-    const allListings = listingsRes.data || [];
-    const allOrders = ordersRes.data || [];
-
-    const pendingKYCCount = allSellers.filter(s => s.verification_status === 'pending_approval').length;
-    const pendingListingsCount = allListings.filter(l => l.status === 'pending_approval').length;
-    const totalEscrowHeld = allOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-
-    return {
-      pendingKYCCount,
-      pendingListingsCount,
-      totalEscrowHeld,
-      totalSellers: allSellers.length,
-      activeSellers: allSellers.filter(s => s.verification_status === 'approved' && s.account_status === 'active').length,
-      recentOrders: allOrders.slice(0, 5),
-    };
-  } catch (err) {
-    console.error('getDashboardKpiMetricsFromDb exception:', err);
-    return {
-      pendingKYCCount: 0,
-      pendingListingsCount: 0,
-      totalEscrowHeld: 0,
-      totalSellers: 0,
-      activeSellers: 0,
-      recentOrders: [],
-    };
   }
 }
